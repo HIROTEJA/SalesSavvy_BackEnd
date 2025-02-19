@@ -64,24 +64,24 @@ public class AuthController {
     }
 
     
-//    @PostMapping("/logout")
-//    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request,HttpServletResponse response) {
-//        try {
-//        	User user=(User) request.getAttribute("authenticatedUser");
-//            authService.logout(user);
-//            Cookie cookie = new Cookie("authToken", null);
-//            cookie.setHttpOnly(true);
-//            cookie.setMaxAge(0);
-//            cookie.setPath("/");
-//            response.addCookie(cookie);
-//            Map<String, String> responseBody = new HashMap<>();
-//            responseBody.put("message", "Logout successful");
-//            return ResponseEntity.ok(responseBody);
-//        } catch (RuntimeException e) {
-//            Map<String, String> errorResponse = new HashMap<>();
-//            errorResponse.put("message", "Logout failed");
-//            return ResponseEntity.status(500).body(errorResponse);
-//        }
-//    }
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request,HttpServletResponse response) {
+        try {
+        	User user=(User) request.getAttribute("authenticatedUser");
+            authService.logout(user);
+            Cookie cookie = new Cookie("authToken", null);
+            cookie.setHttpOnly(true);
+            cookie.setMaxAge(0);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+            Map<String, String> responseBody = new HashMap<>();
+            responseBody.put("message", "Logout successful");
+            return ResponseEntity.ok(responseBody);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Logout failed");
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
     
 }

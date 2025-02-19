@@ -1,6 +1,5 @@
 package com.example.demo.filter;
 
-
 import com.example.demo.entities.Role;
 import com.example.demo.entities.User;
 import com.example.demo.repositories.UserRepository;
@@ -15,28 +14,30 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
-@WebFilter(urlPatterns = {"/api/","/admin/"}) // Corrected URL patterns
-@Component
+@WebFilter(urlPatterns = {"/api/*","/admin/*"})
 public class AuthenticationFilter implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
     private final AuthService authService;
     private final UserRepository userRepository;
-    private static final String ALLOWED_ORIGIN = "http://localhost:5174";
+
+    private static final String ALLOWED_ORIGIN = "http://localhost:5173";
+
     private static final String[] UNAUTHENTICATED_PATHS = {
-            "/api/users/register",
-            "/api/auth/login"
+        "/api/users/register",
+        "/api/auth/login"
     };
 
     public AuthenticationFilter(AuthService authService, UserRepository userRepository) {
-        System.out.println("Filter Started.");
+    	System.out.println("Filter Started.");
         this.authService = authService;
         this.userRepository = userRepository;
     }
@@ -48,22 +49,22 @@ public class AuthenticationFilter implements Filter {
             executeFilterLogic(request, response, chain);
         } catch (Exception e) {
             logger.error("Unexpected error in AuthenticationFilter", e);
-            sendErrorResponse((HttpServletResponse) response,
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse((HttpServletResponse) response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }
     }
+
 
     private void sendErrorResponse(HttpServletResponse response, int statusCode, String message) throws IOException {
         response.setStatus(statusCode);
         response.getWriter().write(message);
     }
 
-    private void executeFilterLogic(ServletRequest request, ServletResponse response,
-                                    FilterChain chain)
+	private void executeFilterLogic(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
+
         String requestURI = httpRequest.getRequestURI();
         logger.info("Request URI: {}", requestURI);
 
@@ -72,7 +73,6 @@ public class AuthenticationFilter implements Filter {
             chain.doFilter(request, response);
             return;
         }
-
         // Handle preflight (OPTIONS) requests
         if (httpRequest.getMethod().equalsIgnoreCase("OPTIONS")) {
             setCORSHeaders(httpResponse);
@@ -83,17 +83,15 @@ public class AuthenticationFilter implements Filter {
         String token = getAuthTokenFromCookies(httpRequest);
         System.out.println(token);
         if (token == null || !authService.validateToken(token)) {
-            sendErrorResponse(httpResponse, HttpServletResponse.SC_UNAUTHORIZED,
-                    "Unauthorized: Invalid or missing token");
+            sendErrorResponse(httpResponse, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Invalid or missing token");
             return;
         }
 
         // Extract username and verify user
-        String username = authService.extractUsername(token); // Assuming you have this method in AuthService
-        Optional<User> userOptional = userRepository.findByUsername(username); // Added type parameter <User>
+        String username = authService.extractUsername(token);
+        Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty()) {
-            sendErrorResponse(httpResponse, HttpServletResponse.SC_UNAUTHORIZED,
-                    "Unauthorized: User not found");
+            sendErrorResponse(httpResponse, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: User not found");
             return;
         }
 
@@ -104,15 +102,12 @@ public class AuthenticationFilter implements Filter {
 
         // Role-based access control
         if (requestURI.startsWith("/admin/") && role != Role.ADMIN) {
-            sendErrorResponse(httpResponse, HttpServletResponse.SC_FORBIDDEN,
-                    "Forbidden: Admin access required");
+            sendErrorResponse(httpResponse, HttpServletResponse.SC_FORBIDDEN, "Forbidden: Admin access required");
             return;
         }
 
-        if (requestURI.startsWith("/api/") && (role != Role.CUSTOMER && role != Role.ADMIN)) {
-            System.err.println("CHECKING..... " + requestURI + " " + role);
-            sendErrorResponse(httpResponse, HttpServletResponse.SC_FORBIDDEN,
-                    "Forbidden: Customer access required");
+        if (requestURI.startsWith("/api/") && role != Role.CUSTOMER) {
+            sendErrorResponse(httpResponse, HttpServletResponse.SC_FORBIDDEN, "Forbidden: Customer access required");
             return;
         }
 

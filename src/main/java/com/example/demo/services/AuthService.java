@@ -1,10 +1,11 @@
 package com.example.demo.services;
 
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
-import java.security.Key;
-import java.nio.charset.StandardCharsets;
-
 @Service
 public class AuthService {
 
@@ -31,9 +29,8 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     // Injecting jwt.secret from properties file
-    @Autowired
-    public AuthService(UserRepository userRepository, JWTTokenRepository jwtTokenRepository, @Value("${jwt.secret}") String jwtSecret) 
-    {
+    public AuthService(UserRepository userRepository, JWTTokenRepository jwtTokenRepository,
+                       @Value("${jwt.secret}") String jwtSecret) {
         this.userRepository = userRepository;
         this.jwtTokenRepository = jwtTokenRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
@@ -55,10 +52,10 @@ public class AuthService {
         return user;
     }
 
-
     public String generateToken(User user) {
         String token;
         LocalDateTime now = LocalDateTime.now();
+        //from repository
         JWTToken existingToken = jwtTokenRepository.findByUserId(user.getUserId());
 
         if (existingToken != null && now.isBefore(existingToken.getExpiresAt())) {
@@ -81,17 +78,18 @@ public class AuthService {
                 .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hour
                 .signWith(SIGNING_KEY, SignatureAlgorithm.HS512)
                 .compact();
+   
     }
 
     public void saveToken(User user, String token) {
         JWTToken jwtToken = new JWTToken(user, token, LocalDateTime.now().plusHours(1));
         jwtTokenRepository.save(jwtToken);
     }
-//
-//    public void logout(User user) {
-//        jwtTokenRepository.deleteByUserId(user.getUserId());
-//    }
-//
+
+    public void logout(User user) {
+        jwtTokenRepository.deleteByUserId(user.getUserId());
+    }
+
     public boolean validateToken(String token) {
         try {
             System.err.println("VALIDATING TOKEN...");

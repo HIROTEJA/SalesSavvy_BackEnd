@@ -42,7 +42,7 @@ public class User {
     private LocalDateTime updatedAt = LocalDateTime.now(); // Automatically updates the timestamp on modification.
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CartItems> cartItems = new ArrayList<>();
+    private List<CartItem> cartItems = new ArrayList<>();
 
     
 	public User(Integer userId, String username, String email, String password, Role role, LocalDateTime createdAt,
